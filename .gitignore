@@ -1,0 +1,5 @@
+!.gitkeep
+*.pyc
+*.json
+input/*
+output/*
