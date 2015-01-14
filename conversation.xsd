@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="message.xsd"/>
+
+
+  <xs:element name="conversation" type="conversationType"/>
+
+
+  <xs:complexType name="messagesType">
+    <xs:sequence>
+      <xs:element type="messageType" name="message" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+
+  <xs:complexType name="conversationType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="mediums" minOccurs="0"/>
+      <xs:element type="xs:string" name="subject" minOccurs="0"/>
+      <xs:element type="xs:string" name="category" minOccurs="0"/>
+      <xs:element type="xs:int" name="likes" minOccurs="0"/>
+      <xs:element type="xs:int" name="views" minOccurs="0"/>
+      <xs:element type="xs:string" name="status" minOccurs="0"/>
+      <xs:element type="messagesType" name="messages" minOccurs="0"/>
+      <xs:element type="xs:string" name="analysis" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute type="xs:string" name="id"/>
+  </xs:complexType>
+
+
+</xs:schema>
