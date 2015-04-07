@@ -4,23 +4,22 @@
   <xs:complexType name="contextType">
     <xs:sequence>
       <xs:element type="xs:string" name="medium" minOccurs="0"/>
-      <xs:element type="xs:string" name="private" minOccurs="0"/>
+      <xs:element type="xs:boolean" name="private" minOccurs="0"/>
       <xs:element type="xs:int" name="likes" minOccurs="0"/>
       <xs:element type="xs:int" name="views" minOccurs="0"/>
       <xs:element type="xs:string" name="importance" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="participantType">
-    <xs:simpleContent>
-      <xs:extension base="xs:string">
+    <xs:sequence>
+      <xs:element type="miscType" name="misc" minOccurs="0"/>
+    </xs:sequence>
         <xs:attribute type="xs:string" name="id"/>
         <xs:attribute type="xs:string" name="role" use="optional"/>
         <xs:attribute type="xs:string" name="realname" use="optional"/>
         <xs:attribute type="xs:string" name="username" use="optional"/>
         <xs:attribute type="xs:string" name="email" use="optional"/>
         <xs:attribute type="xs:string" name="description" use="optional"/>
-      </xs:extension>
-    </xs:simpleContent>
   </xs:complexType>
   <xs:complexType name="fromType">
     <xs:sequence>
@@ -42,7 +41,7 @@
       <xs:element type="participantType" name="participant" maxOccurs="unbounded" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:complexType name="fieldType">
+  <xs:complexType name="itemType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attribute type="xs:string" name="name"/>
@@ -50,22 +49,21 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  <xs:complexType name="metaType">
+  <xs:complexType name="miscType">
     <xs:sequence>
-      <xs:element type="fieldType" name="field" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element type="itemType" name="item" maxOccurs="unbounded" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="headerType">
     <xs:sequence>
       <xs:element type="xs:string" name="subject"/>
-      <xs:element type="xs:string" name="date"/>
+      <xs:element type="xs:string" name="daytime"/>
       <xs:element type="xs:string" name="encoding"/>
       <xs:element type="xs:string" name="MIME"/>
       <xs:element type="fromType" name="from"/>
-      <xs:element type="toType" name="to"/>
+      <xs:element type="toType" name="to" minOccurs="0"/>
       <xs:element type="ccType" name="cc" minOccurs="0"/>
       <xs:element type="bccType" name="bcc" minOccurs="0"/>
-      <xs:element type="metaType" name="meta" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="kbitemType">
@@ -84,6 +82,7 @@
   <xs:complexType name="contentType">
     <xs:sequence>
       <xs:element type="xs:string" name="body" minOccurs="0"/>
+      <xs:element type="xs:string" name="signature" minOccurs="0"/>
       <xs:element type="xs:string" name="form" minOccurs="0"/>
       <xs:element type="xs:string" name="attachments" minOccurs="0"/>
       <xs:element type="kbitemsType" name="kbitems" minOccurs="0"/>
@@ -93,17 +92,12 @@
     <xs:sequence>
       <xs:element type="contextType" name="context"/>
       <xs:element type="headerType" name="header"/>
+      <xs:element type="miscType" name="misc" minOccurs="0"/>
       <xs:element type="contentType" name="content"/>
-      <xs:element type="xs:string" name="analysis"/>
+      <xs:element type="xs:string" name="analysis" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute type="xs:string" name="id"/>
     <xs:attribute type="xs:string" name="conversationId" use="optional"/>
     <xs:attribute type="xs:string" name="inReplyTo" use="optional"/>
   </xs:complexType>
-
-
-
-
-
-
 </xs:schema>

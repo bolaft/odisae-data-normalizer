@@ -18,201 +18,12 @@ import xml.etree.cElementTree as ET
 from optparse import OptionParser
 from progressbar import ProgressBar
 from utility import timed_print, remove_extension, save_to_file
+from conversations import Conversation, Message, Participant
 
 
 QUICK_RUN_MESSAGE_LIMIT = 100
 
-
-class Conversation:
-    def __init__(self):
-        self.id = id(self)
-        self.mediums = []
-        self.subject = ""
-        self.category = ""
-        self.views = 0
-        self.status = ""
-        self.messages = []
-        self.analysis = {}
-
-
-    def add_message(self, message):
-        self.messages.append(message)
-
-        if message.medium not in self.mediums:
-            self.mediums.append(message.medium)
-
-
-    def json_serialize(self):
-        return {
-            "id": self.id,
-            "mediums": self.mediums,
-            "subject": self.subject,
-            "category": self.category,
-            "views": self.views,
-            "status": self.status,
-            "messages": [m.json_serialize() for m in self.messages],
-            "analysis": self.analysis
-        }
-
-
-    def xml_serialize(self):
-        conversation = ET.Element("conversation")
-        conversation.set("id", str(self.id))
-
-        ET.SubElement(conversation, "mediums").text = " ".join(self.mediums)
-        ET.SubElement(conversation, "subject").text = self.subject
-        ET.SubElement(conversation, "category").text = self.category
-        ET.SubElement(conversation, "views").text = str(self.views)
-        ET.SubElement(conversation, "status").text = self.status
-
-        messages = ET.SubElement(conversation, "messages")
-
-        for message in self.messages:
-            messages.append(message.xml_serialize())
-
-        return conversation
-
-
-class Message:
-    def __init__(self):
-        self.id = id(self)
-        self.conversation_id = None
-        self.medium = ""
-        self.private = False
-        self.likes = 0
-        self.views = 0
-        self.importance = ""
-        self.subject = ""
-        self.date = None
-        self.encoding = ""
-        self.MIME = ""
-        self.participant_from = []
-        self.participant_to = []
-        self.participant_cc = []
-        self.participant_bcc = []
-        self.body = ""
-        self.form = {}
-        self.kbitems = []
-        self.analysis = None
-
-
-    def json_serialize(self):
-        return {
-            "id": self.id,
-            "medium": self.medium,
-            "private": self.private,
-            "likes": self.likes,
-            "views": self.views,
-            "importance": self.importance,
-            "subject": self.subject,
-            "date": self.date,
-            "encoding": self.encoding,
-            "MIME": self.MIME,
-            "participant_from": [p.json_serialize() for p in self.participant_from],
-            "participant_to": [p.json_serialize() for p in self.participant_to],
-            "participant_cc": [p.json_serialize() for p in self.participant_cc],
-            "participant_bcc": [p.json_serialize() for p in self.participant_bcc],
-            "body": self.body,
-            "form": self.form,
-            "kbitems": self.kbitems,
-            "analysis": self.analysis
-        }
-
-
-    def xml_serialize(self):
-        message = ET.Element("message")
-
-        message.set("id", str(self.id))
-        message.set("conversationId", str(self.conversation_id))
-
-        in_reply_to = ""
-
-        if (len(self.participant_to) > 0):
-            in_reply_to = str(self.participant_to[0].email)
-
-        message.set("inReplyTo", in_reply_to)
-
-        context = ET.SubElement(message, "context")
-
-        ET.SubElement(context, "medium").text = self.medium
-        ET.SubElement(context, "private").text = str(self.private).lower()
-        ET.SubElement(context, "likes").text = str(self.likes)
-        ET.SubElement(context, "views").text = str(self.views)
-        ET.SubElement(context, "importance").text = self.importance
-
-        header = ET.SubElement(message, "header")
-
-        ET.SubElement(header, "subject").text = self.subject
-        ET.SubElement(header, "date").text = self.date
-        ET.SubElement(header, "encoding").text = self.encoding
-        ET.SubElement(header, "MIME").text = self.MIME
-
-        participant_from = ET.SubElement(header, "from")
-
-        for participant in self.participant_from:
-            participant_from.append(participant.xml_serialize())
-
-        participant_to = ET.SubElement(header, "to")
-
-        for participant in self.participant_to:
-            participant_to.append(participant.xml_serialize())
-
-        participant_cc = ET.SubElement(header, "cc")
-
-        for participant in self.participant_cc:
-            participant_cc.append(participant.xml_serialize())
-
-        participant_bcc = ET.SubElement(header, "bcc")
-
-        for participant in self.participant_bcc:
-            participant_bcc.append(participant.xml_serialize())
-
-            ET.SubElement(header, "meta")
-
-        content = ET.SubElement(message, "content")
-
-        ET.SubElement(content, "body").text = self.body
-        ET.SubElement(content, "form")
-        ET.SubElement(content, "attachments")
-        ET.SubElement(content, "kbitems")
-
-        ET.SubElement(message, "analysis")
-
-        return message
-
-
-class Participant:
-    def __init__(self):
-        self.id = id(self)
-        self.role = ""
-        self.real_name = ""
-        self.user_name = ""
-        self.email = ""
-        self.description = ""
-
-
-    def json_serialize(self):
-        return {
-            "id": self.id,
-            "role": self.role,
-            "real_name": self.real_name,
-            "user_name": self.user_name,
-            "email": self.email,
-            "description": self.description
-        }
-
-
-    def xml_serialize(self):
-        participant = ET.Element("participant")
-
-        participant.set("id", str(self.id))
-        participant.set("role", self.role)
-        participant.set("realname", self.real_name)
-        participant.set("username", self.user_name)
-        participant.set("email", self.email)
-        participant.set("description", self.description)
-
-        return participant
+progress = ProgressBar()
 
 
 def normalize(opts, args):
@@ -226,31 +37,20 @@ def normalize(opts, args):
 
     data = extract_data(opts.email, opts.forum, test=opts.quick)
 
-    if opts.xml:
-        timed_print("Converting {0} conversations to XML".format(len(data)))
+    timed_print("Converting {0} conversations to XML".format(len(data)))
 
-        xmls = []
+    xmls = []
 
-        for conversation in [conversation.xml_serialize() for conversation in data]:
-            xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            xml += ET.tostring(conversation)
+    for conversation in progress([conversation.xml_serialize() for conversation in data]):
+        xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        xml += ET.tostring(conversation)
 
-            xmls.append(xml)
+        xmls.append(xml)
 
-        timed_print("Exporting to {0}".format(output_folder))
+    timed_print("Exporting to {0}".format(output_folder))
 
-        for i, xml in enumerate(xmls):
-            save_to_file(xml, "{0}{1}_{2}.xml".format(output_folder, label, i + 1))
-
-
-    if opts.json:
-        timed_print("Converting {0} conversations to JSON".format(len(data)))
-
-        json_data = json.dumps([conversation.json_serialize() for conversation in data], ensure_ascii=False)
-
-        timed_print("Exporting to {0}data.json".format(output_folder))
-
-        save_to_file(json_data, output_folder + "data.json")
+    for i, xml in progress(enumerate(xmls)):
+        save_to_file(xml, "{0}{1}_{2}.xml".format(output_folder, label, i + 1))
 
 
 def extract_data(email_folder, forum_folder, test=False):
@@ -295,15 +95,13 @@ def parse_email_data(data, category=None, test=False):
     """
     conversations = []
 
-    progress = ProgressBar()
-
     for initial_email in progress(data):
         conversation = Conversation()
         conversation.subject = initial_email["subject"]
         conversation.category = category
         
         for message in parse_email_tree(initial_email, conversation.id):
-            conversation.add_message(message)
+            conversation.messages.append(message)
 
         conversations.append(conversation)
 
@@ -319,7 +117,7 @@ def parse_email_tree(item, conversation_id, to=None, test=False):
     message.medium = "email"
     message.conversation_id = conversation_id
     message.subject = item["subject"]
-    message.date = item["datetime"]
+    message.daytime = item["datetime"]
     message.encoding = "UTF-8"
     message.MIME = "text/plain"
     message.body = item["content"]
@@ -375,10 +173,13 @@ def parse_forum_data(data, test=False):
                 message = Message()
                 message.medium = "forum"
                 message.subject = thread["name"]
-                message.date = post["datetime"]
+                message.daytime = post["datetime"]
                 message.encoding = "UTF-8"
                 message.MIME = "text/html"
                 message.body = post["content"]
+
+                if post["signature"]:
+                    message.misc["signature"] = post["signature"]
 
                 participant = Participant()
                 participant.user_name = post["author"]
@@ -386,13 +187,14 @@ def parse_forum_data(data, test=False):
 
                 message.participant_from.append(participant)
 
-                conversation.add_message(message)
+                conversation.messages.append(message)
 
                 message_number += 1
 
             conversations.append(conversation)
 
     return conversations
+
 
 def parse_args():
     """
@@ -414,18 +216,6 @@ def parse_args():
         default=False,
         action="store_true",
         help="quick run for testing purposes (stops around 100 messages of each type)")
-
-    op.add_option("--json",
-        dest="json",
-        default=False,
-        action="store_true",
-        help="exports a JSON file")
-
-    op.add_option("--xml",
-        dest="xml",
-        default=False,
-        action="store_true",
-        help="exports an XML file")
 
     op.add_option("--email",
         dest="email",

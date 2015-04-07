@@ -15,12 +15,12 @@
 
   <xs:complexType name="conversationType">
     <xs:sequence>
-      <xs:element type="xs:string" name="mediums" minOccurs="0"/>
       <xs:element type="xs:string" name="subject" minOccurs="0"/>
       <xs:element type="xs:string" name="category" minOccurs="0"/>
       <xs:element type="xs:int" name="likes" minOccurs="0"/>
       <xs:element type="xs:int" name="views" minOccurs="0"/>
       <xs:element type="xs:string" name="status" minOccurs="0"/>
+      <xs:element type="miscType" name="misc" minOccurs="0"/>
       <xs:element type="messagesType" name="messages" minOccurs="0"/>
       <xs:element type="xs:string" name="analysis" minOccurs="0"/>
     </xs:sequence>
